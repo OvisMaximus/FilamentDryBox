@@ -110,9 +110,34 @@ module ball_bearing_fit(position, rotation) {
 
 profile_width=axis_distance+ball_diameter+2*min_wall_thickness;
 profile_height=axis_height+ball_diameter/2+min_wall_thickness;
+
+module spool_slot(pos) {
+    translate(pos)
+        cube([ball_length+2*tolerance,profile_width+2*cad,slot_height+2*cad]);
+}
+    
+module add_ball_bearing_fits(pos) {
+    module add_ball_bearing_fit_pair() {
+        ball_bearing_fit(
+            [pos.x-cad,axis_distance/2,axis_height],
+            [0,90,0]
+        );
+        ball_bearing_fit(
+            [pos.x+ball_length+.5*tolerance+cad,axis_distance/2,axis_height],
+            [0,90,0]
+        );
+    }
+    add_ball_bearing_fit_pair();
+    mirror([0,1,0]) add_ball_bearing_fit_pair();
+}
+    
 module spool_holder_wall () {
 
     profile_length=2*(min_wall_thickness+tolerance)+slot_offset+ball_length;
+
+    slot_pos=[min_wall_thickness+slot_offset, 
+            -profile_width/2-cad,
+            profile_height-slot_height];
     
     module vincinity_clearence() {
         translate([profile_length-cad, -profile_width/2-cad,-cad])
@@ -123,25 +148,6 @@ module spool_holder_wall () {
             cube([3*profile_length,2*profile_length+2*cad,2*profile_height]);
         translate([-1.7*profile_length-cad, -profile_width/2-cad,-cad])
             cube([profile_length,profile_width+2*cad,2*profile_height]);
-    }
-
-    slot_pos=[min_wall_thickness+slot_offset, 
-            -profile_width/2-cad,
-            profile_height-slot_height];
-    module spool_slot() {
-        translate(slot_pos)
-            cube([ball_length+2*tolerance,profile_width+2*cad,slot_height+2*cad]);
-    }
-    
-    module add_ball_bearing_fits() {
-        ball_bearing_fit(
-            [slot_pos.x-cad,axis_distance/2,axis_height],
-            [0,90,0]
-        );
-        ball_bearing_fit(
-            [slot_pos.x+ball_length+.5*tolerance+cad,axis_distance/2,axis_height],
-            [0,90,0]
-        );
     }
 
     module holder_end() {
@@ -165,33 +171,36 @@ module spool_holder_wall () {
 
         vincinity_clearence();
 
-        spool_slot();
+        spool_slot(slot_pos);
 
         translate([-profile_length/5,0,0])
             holes(profile_length*1.2);
     }
     
-    add_ball_bearing_fits();
-    mirror([0,1,0]) add_ball_bearing_fits();
-    
-    
+    add_ball_bearing_fits(slot_pos);
 }
 
 module spool_holder_double () {
     profile_length=3*min_wall_thickness+4*tolerance+2*ball_length;
 
+    slot_pos_1=[min_wall_thickness, 
+                -profile_width/2-cad,
+                profile_height-slot_height];
+    slot_pos_2=[2*min_wall_thickness+2*(tolerance)+ball_length, 
+                -profile_width/2-cad,
+                profile_height-slot_height];
     difference() {
         translate([0,-profile_width/2,0])
             cube([profile_length,profile_width,profile_height]);
 
-        translate([min_wall_thickness, -profile_width/2-cad,profile_height-slot_height])
-            cube([ball_length+2*tolerance,profile_width+2*cad,slot_height+2*cad]);
-
-        translate([2*min_wall_thickness+2*(tolerance)+ball_length, -profile_width/2-cad,profile_height-slot_height])
-            cube([ball_length+2*tolerance,profile_width+2*cad,slot_height+2*cad]);
-
+        spool_slot(slot_pos_1);
+        spool_slot(slot_pos_2);
         holes(profile_length);
     }
+    add_ball_bearing_fits(slot_pos_1);
+    add_ball_bearing_fits(slot_pos_2);
+    
+    
 }
 
 if(which_part==0) {
