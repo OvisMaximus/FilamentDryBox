@@ -226,12 +226,23 @@ module spool_holder_snap_on() {
             cube([ball_length+2*tolerance,axis_distance/2,2*min_wall_thickness]);
     }
         
+    module add_brims() {
+        module brim() {
+            translate([-profile_length/2,profile_width/2-(profile_width-axis_distance)/2,0])
+                cube([profile_length*2,profile_length,0.2]);
+        }
+        brim();
+        mirror([0,1,0]) brim();
+    }
+    
     difference() {
         union() {
             difference() {
-                translate([0,-profile_width/2,0])
-                    cube([profile_length,profile_width,profile_height]);
-
+                union() {
+                    translate([0,-profile_width/2,0])
+                        cube([profile_length,profile_width,profile_height]);
+                    add_brims();
+                }
                 spool_slot(slot_pos_1);
                 slot_clearings(slot_pos_1);
                 spool_slot(slot_pos_2);
