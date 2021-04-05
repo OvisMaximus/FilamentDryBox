@@ -21,13 +21,13 @@ NUT=true;
  *   * for outside threads on bolts H==1 equals the thread diameter e.g. the 5 in M5.
  */
 ISO_POINTS = [
-    [0,0],
-    [1/6,0],
-    [1/6,1/4],
-    [7/8,9/16],
-    [7/8,11/16],
+    [0,1],
     [1/6,1],
-    [0,1]
+    [7/8,11/16],
+    [7/8,9/16],
+    [1/6,1/4],
+    [1/6,0],
+    [0,0]
 ];
 
 function iso_H_by_P(P) = sqrt(3)/2*P;
@@ -67,7 +67,7 @@ ISO_PROPERTIES_BY_DIAMETER = [
     [56,5.5],
     [60,5.5],
     [64,6],
-    [78,5]
+    [68,6]
 ];
 
 function iso_standardize_diameter_map(properties) = [
@@ -135,17 +135,6 @@ function max_x(points, i=0, maxx=0) =
     let(x=(is_undef(points[i].x)? 0 : points[i].x),current_max= x > maxx? x : maxx)
     len(points) > i? max_x(points, i+1, current_max) : current_max;
 
-module slice(pos, pos_next, angle, angle_next, points) {       
-    hull() {
-        translate(pos) 
-            rotate([0,0, angle]) 
-                rotate_extrude(angle=0.1) polygon(points);
-        translate(pos_next) 
-            rotate([0, 0, angle_next]) 
-                rotate_extrude(angle=0.1) polygon(points);
-    }
-}
-
 module helix(height, radius, threading_pitch, points) {
     stepsPerRound=$fn==0?12:$fn;
     rounds=height/threading_pitch;
@@ -153,17 +142,33 @@ module helix(height, radius, threading_pitch, points) {
     pitchPerStep=threading_pitch/stepsPerRound;
     steps=round(rounds*stepsPerRound);
 
-
     function angle(step) = (step%stepsPerRound)*anglePerStep;
-    function position(angle, step) = [cos(angle)*radius, sin(angle)*radius,step*pitchPerStep];
-
+    function transpose_to_xz(points,pos) = [for(point=points)[point.x+pos.x, 0,point.y+pos.y]];
+    function rotate_and_pitch_surface(points,angle,pitch) = [for(point=points)
+        [cos(angle)*point.x, sin(angle)*point.x,  point.z+pitch]
+    ];
+    function calculate_faces(num_points_of_shape) = [
+         [for(i=[0:num_points_of_shape-1]) i], //front
+         [for(i=[num_points_of_shape-1:-1:0]) i+num_points_of_shape], //back
+         for(i=[0:num_points_of_shape-1]) [     //sides
+             i, 
+             i+num_points_of_shape, 
+            (i+1)%num_points_of_shape+num_points_of_shape, 
+            (i+1)%num_points_of_shape]
+         
+    ];
+    points_on_xz = transpose_to_xz(points, [radius-cad, 0, 0]);
+    faces = calculate_faces(len(points)); 
+         
     for(step=[0:steps]) {
         next=step+1;
-        angle=angle(step);
-        angle_next=angle(next);
-        pos=position(angle, step);
-        pos_next=position(angle_next, next);
-        slice(pos,pos_next,angle,angle_next, points);
+        angle=angle(step)-cad;
+        angle_next=angle(next)+cad;
+        points_close_face = 
+            rotate_and_pitch_surface(points_on_xz, angle, step*pitchPerStep);
+        points_far_face = 
+            rotate_and_pitch_surface(points_on_xz, angle_next, (step+1)*pitchPerStep);
+        polyhedron(concat(points_close_face, points_far_face), faces,2);
     }
 }
 
@@ -215,4 +220,4 @@ module debugging_scale() {
 }
 
 //debugging_scale();
-//screw_body(20,10);
+//screw_body(68,18);
