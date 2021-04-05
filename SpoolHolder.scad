@@ -229,7 +229,11 @@ module spool_holder_snap_on() {
     module add_brims() {
         module brim() {
             translate([-profile_length/2,profile_width/2-(profile_width-axis_distance)/2-profile_length,0])
-                cube([profile_length*2,2*profile_length,0.2]);
+                cube([profile_length*2,2.5*profile_length,0.2]);
+            translate([-2.25,profile_width/2-(profile_width-axis_distance)/2-profile_length,0])
+                cube([2,2.5*profile_length,2]);
+            translate([profile_length+0.25,profile_width/2-(profile_width-axis_distance)/2-profile_length,0])
+                cube([2,2.5*profile_length,2]);
         }
         brim();
         mirror([0,1,0]) brim();
