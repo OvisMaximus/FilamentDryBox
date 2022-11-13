@@ -1,10 +1,10 @@
 // High profile to lift the spools as much as possible to put silica gel below, low profile to safe material or for spools with a larger diameter than usual.
 profile=0; // [0:low profile, 1:high profile]
-which_part=0; // [0:wall, 1:double, 2:snap_on]
+which_part=0; // [0:wall, 1:double, 2:snap on double, 3:snap on single]
 
 module endOfCustomizerableVariablesNOP() {};
-profiles_axis_heights=[25.0,35.0,12];
-profiles_slot_heights=[1.2,1.8,1];
+profiles_axis_heights=[25.0,35.0,12,12];
+profiles_slot_heights=[1.2,1.8,1,1];
 spool_diameter=200;
 floor_wall_radius=5.5;
 min_wall_thickness=2.5;
@@ -13,14 +13,16 @@ wall_angle=2.7;
 wall_profile_center_offset=-3.7;
 axis_diameter=8.0;
 axis_distance=130.0;
-axis_height=which_part==2?profiles_axis_heights[2]
-            :profiles_axis_heights[profile];
+axis_height = which_part > 1
+    ? profiles_axis_heights[2]
+    : profiles_axis_heights[profile];
 ball_inner_diameter=12;
 ball_diameter=22.0;
 ball_length=7.0;
 cut_out_offset=5;
-slot_height=(which_part==2)?profiles_slot_heights[2]*ball_diameter
-            : profiles_slot_heights[profile]*ball_diameter;
+slot_height=(which_part > 1)
+    ? profiles_slot_heights[2]*ball_diameter
+    : profiles_slot_heights[profile]*ball_diameter;
 slot_offset=-1;
 tolerance=0.2;
 
@@ -182,7 +184,10 @@ module spool_holder_wall () {
     add_ball_bearing_fits(slot_pos);
 }
 
-profile_length=3*min_wall_thickness+4*tolerance+2*ball_length;
+profile_length = (which_part == 3)
+    ? 2 * min_wall_thickness + 2 * tolerance +     ball_length
+    : 3 * min_wall_thickness + 4 * tolerance + 2 * ball_length;
+
 
 slot_pos_1=[min_wall_thickness, 
             -profile_width/2-cad,
@@ -249,12 +254,16 @@ module spool_holder_snap_on() {
                 }
                 spool_slot(slot_pos_1);
                 slot_clearings(slot_pos_1);
-                spool_slot(slot_pos_2);
-                slot_clearings(slot_pos_2);
+                if(which_part == 2) {
+                    spool_slot(slot_pos_2);
+                    slot_clearings(slot_pos_2);
+                }
                 holes(profile_length);
             }
             add_ball_bearing_fits(slot_pos_1);
-            add_ball_bearing_fits(slot_pos_2);
+            if (which_part != 3) {
+                add_ball_bearing_fits(slot_pos_2);
+            }
         }
         axis_snap_on_slots();
     }
