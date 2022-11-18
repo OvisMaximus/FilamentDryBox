@@ -1,7 +1,7 @@
 include <thread.scad>;
 
 /*[Select Part]*/
-part=0;//[0:screw out, 1:screw in, 2:fix cap, 3:cover cap, 4:tightening ring, 5:label holder]
+part=0;//[0:screw out, 1:screw in, 2:fix cap, 3:cover cap, 4:tightening ring, 5:label holder, 6: label Flex, 7:label PETG, 8:label PLA]
 
 /*[Box Properties]*/
 wall_thickness=1.5;
@@ -25,12 +25,13 @@ pneu_intake_length=5.2;
 hTighteningRing = 0.75;
 
 /*[Label Properties]*/
-lLabel = 50;
-wLabel = 22;
+lLabel = 44;
+wLabel = 20;
 hLabel = 1.5;
 rLabel = 2.0;
 lLabelFrame = 4.0;
 rLabelProfile = 0.75;
+dLabelRing = 30;
 
 /*[Mechanical Properties]*/
 tolerance=0.2; // additional distance between bolt and nut due to 3d printing traits.
@@ -53,8 +54,14 @@ else if (part==3)
     rotate([180,0,0]) cap_cover();
 else if (part==4)
     tighteningRing();
-else
+else if (part==5)
     labelHolder();
+else if (part==6)
+    labelFlex();
+else if (part==7)
+    labelPETG();
+else
+    labelPLA();
 
 
 inside=threading_diameter*0.46;
@@ -128,10 +135,10 @@ module tighteningRing() {
 module labelHolder() {
     module solid() {
         module holderNutBody() {
-            circle(d = cap_diameter);
+            circle(d = dLabelRing);
         }
         module holderNeckBody() {
-            wNeck = cap_diameter-threading_diameter;
+            wNeck = dLabelRing - threading_diameter;
             translate([-wNeck/2, -cap_diameter/2, 0])
                 square([wNeck, threading_diameter/2 + 2 * cad]);
         }
@@ -151,13 +158,33 @@ module labelHolder() {
     }
     difference() {
         solid();
-        nutThread();
+        translate([0,0,-cad])
+            cylinder(hLabel + 2*cad, d=threading_diameter, center = false);
         translate([-lLabel/2, -cap_diameter/2 - wLabel -lLabelFrame,-cad])
             minkowski() {
                 labelBase();
-                sphere(r=2*cad);
+                sphere(r=tolerance);
             }
     }
+}
+
+module labelFlex() {
+    labelText("Flex / TPU", 7);
+}
+
+module labelPETG() {
+    labelText("PETG", 12);
+}
+
+module labelPLA() {
+    labelText("PLA", 12);
+}
+
+module labelText(labelText, labelSize) {
+    labelBase();
+    translate([lLabel/2,wLabel/2,hLabel -cad])
+        linear_extrude(0.75)
+            text(labelText, size = labelSize, font="Bahnschrift:style=Regular", halign = "center", valign = "center");
 }
 
 module labelBase() {
